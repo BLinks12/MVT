@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>httpp:// - Mutual Verification Token Demo</title>
+    <style>
+      body {
+        background-color: black;
+        color: white;
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 0;
+        padding: 32px;
+        height: calc(100dvh - 64px);
+      }
+      #header {
+        text-align: center;
+        font-size: 1.2em;
+        margin-top: 8px;
+      }
+      #container {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        flex-direction: row;
+        gap: 8px;
+        margin-top: 32px;
+      }
+      /* Reusing caretaker blink from the original code */
+      #text-container {
+        font-size: 2em;
+        position: relative;
+      }
+      #caret {
+        position: absolute;
+        right: -3px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: white;
+        animation: blink 0.7s infinite;
+      }
+      @keyframes blink {
+        0%, 100% { opacity: 0; }
+        50% { opacity: 1; }
+      }
+      #footer {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-top: 32px;
+      }
+      #footer > div {
+        text-align: center;
+        font-size: 0.8em;
+      }
+      #footer a {
+        color: white;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      #domainStatus {
+        margin-top: 16px;
+        font-size: 0.9em;
+        color: #52e152;
+      }
+      #mvt-container {
+        margin-top: 24px;
+        text-align: center;
+      }
+      #mvt-balances {
+        margin: 8px 0;
+        font-size: 0.85em;
+      }
+      button {
+        background-color: #52e152;
+        border: none;
+        color: black;
+        font-size: 1em;
+        padding: 8px 16px;
+        cursor: pointer;
+        border-radius: 4px;
+        margin: 4px;
+      }
+      button:hover {
+        background-color: #4cd74c;
+      }
+      .log {
+        width: 100%;
+        max-width: 600px;
+        background-color: #111;
+        font-family: monospace;
+        font-size: 0.85em;
+        padding: 10px;
+        border: 1px solid #444;
+        border-radius: 6px;
+        margin-top: 24px;
+        overflow-y: auto;
+        max-height: 200px;
+        white-space: pre-wrap;
+      }
+      .log span {
+        display: block;
+        margin-bottom: 4px;
+      }
+      .log .info {
+        color: #0f0;
+      }
+      .log .warning {
+        color: #ff0;
+      }
+      .log .error {
+        color: #f00;
+      }
+      .log .success {
+        color: #0ff;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- SVG Icon at top (same style as original) -->
+    <svg viewBox="0 0 105.83333 105.83333" xmlns="http://www.w3.org/2000/svg" style="height: 100px; width:100px;">
+      <path
+        style="fill: #ffffff; stroke-width: 0.264583;"
+        d="m 16.933327,-5.0862632e-6 h 71.966679 c 9.381066,0 16.933334,7.5522662862632 16.933334,16.9333320862632 v 71.966679 c 0,9.381066 -7.552268,16.933334 -16.933334,16.933334 H 16.933327 C 7.5522612,105.83334 -5.0862632e-6,98.281072 -5.0862632e-6,88.900006 V 16.933327 C -5.0862632e-6,7.5522612 7.5522612,-5.0862632e-6 16.933327,-5.0862632e-6 Z"
+      />
+      <path
+        d="m 23.4167,60.710223 -2.281764,-1.570565 3.555996,-4.800594 -5.541427,-1.866898 0.829732,-2.548464 5.511794,1.866898 v -5.92666 h 2.844797 v 5.92666 l 5.511794,-1.866898 0.829732,2.548464 -5.541427,1.866898 3.555996,4.800594 -2.281764,1.570565 -3.496729,-4.800594 z m 21.276721,1.718732 q -1.422399,0 -2.015065,-0.592666 -0.563032,-0.592666 -0.563032,-1.452032 v -0.770466 q 0,-0.859366 0.563032,-1.452032 0.592666,-0.592666 2.015065,-0.592666 1.422398,0 1.985431,0.592666 0.592666,0.592666 0.592666,1.452032 v 0.770466 q 0,0.859366 -0.592666,1.452032 -0.563033,0.592666 -1.985431,0.592666 z m 0,-11.023588 q -1.422399,0 -2.015065,-0.592666 -0.563032,-0.592666 -0.563032,-1.452032 v -0.770466 q 0,-0.859365 0.563032,-1.452031 0.592666,-0.592666 2.015065,-0.592666 1.422398,0 1.985431,0.592666 0.592666,0.592666 0.592666,1.452031 v 0.770466 q 0,0.859366 -0.592666,1.452032 -0.563033,0.592666 -1.985431,0.592666 z m 11.349565,14.81665 9.986422,-26.610704 h 2.87443 l -9.986422,26.610704 z m 17.779991,0 9.986422,-26.610704 h 2.87443 l -9.986422,26.610704 z"
+      />
+    </svg>
+
+    <div id="header">HyperText Transfer Proof Protocol <br/> <strong>Mutual Verification Token (MVT)</strong></div>
+
+    <div id="container">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" style="color: #52e152; height:30px;">
+        <path fill="currentColor"
+          d="M144 144v48H304V144c0-44.2-35.8-80-80-80s-80 35.8-80 80zM80 192V144C80 64.5 144.5 0 224 0s144 64.5 144 144v48h16c35.3 0 64 28.7 64 64V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V256c0-35.3 28.7-64 64-64H80z" />
+      </svg>
+      <div id="text-container">
+        <span id="protocol">httpp://</span
+        ><span id="domain"></span
+        ><span id="caret"></span>
+      </div>
+    </div>
+
+    <div id="domainStatus"></div>
+
+    <div id="mvt-container">
+      <div id="mvt-balances"></div>
+      <button id="requestDataBtn">Request Private Data</button>
+      <button id="respondSymmetryBtn" disabled>Respond with Symmetrical Proof</button>
+      <button id="finalizeBtn" disabled>Finalize Exchange</button>
+    </div>
+
+    <div class="log" id="logArea"></div>
+
+    <div id="footer">
+      <div>Using MVT to request and share private proofs safely. Refuse symmetrical proof and risk losing your deposit!</div>
+      <div>Follow us on X (Twitter) <a href="https://x.com/httpp_io">@httpp_io</a> to stay up to date.</div>
+    </div>
+
+    <script>
+      /*******************************************
+       * 1) TYPEWRITER EFFECT FOR DOMAINS
+       *******************************************/
+      var domains = ["example.com","x.com","secret-site.org","revolut.com","coinbase.com"];
+      var currentDomainIndex = 0;
+      var currentCharIndex = 0;
+      var isDeleting = false;
+      var typingSpeed = 150;
+      var deletingSpeed = 75;
+      var pauseBetweenWords = 1000;
+
+      function typeText() {
+        var currentDomain = domains[currentDomainIndex];
+        var domainElement = document.getElementById("domain");
+
+        if (isDeleting) {
+          domainElement.textContent = currentDomain.substring(0, currentCharIndex - 1);
+          currentCharIndex--;
+        } else {
+          domainElement.textContent = currentDomain.substring(0, currentCharIndex + 1);
+          currentCharIndex++;
+        }
+
+        if (!isDeleting && currentCharIndex === currentDomain.length) {
+          isDeleting = true;
+          setTimeout(typeText, pauseBetweenWords);
+        } else if (isDeleting && currentCharIndex === 0) {
+          isDeleting = false;
+          currentDomainIndex = (currentDomainIndex + 1) % domains.length;
+          setTimeout(typeText, typingSpeed);
+        } else {
+          setTimeout(typeText, isDeleting ? deletingSpeed : typingSpeed);
+        }
+      }
+      typeText();
+
+      /*******************************************
+       * 2) MVT SIMULATION: BALANCES & LOGIC
+       *******************************************/
+      const userAddress = "You";
+      const domainAddress = "Domain";
+
+      let userBalance = 100;    // MVT tokens (fake)
+      let domainBalance = 100;  // MVT tokens (fake)
+      let userStaked = 0;
+      let domainStaked = 0;
+      let symmetricalRequest = false;
+      let exchangeComplete = false;
+
+      const logArea = document.getElementById("logArea");
+      const domainStatus = document.getElementById("domainStatus");
+      const mvtBalances = document.getElementById("mvt-balances");
+      const requestDataBtn = document.getElementById("requestDataBtn");
+      const respondSymmetryBtn = document.getElementById("respondSymmetryBtn");
+      const finalizeBtn = document.getElementById("finalizeBtn");
+
+      function updateBalances() {
+        mvtBalances.textContent = 
+          `MVT Balances:\n- ${userAddress}: ${userBalance} MVT (Staked: ${userStaked})\n- ${domainAddress}: ${domainBalance} MVT (Staked: ${domainStaked})`;
+      }
+
+      function logMessage(msg, type="info") {
+        const span = document.createElement("span");
+        span.classList.add(type);
+        span.innerText = msg;
+        logArea.appendChild(span);
+        logArea.scrollTop = logArea.scrollHeight;
+      }
+
+      /*******************************************
+       * 3) BUTTON EVENTS
+       *******************************************/
+
+      // A) User requests data (stakes MVT)
+      requestDataBtn.addEventListener("click", () => {
+        if (exchangeComplete) {
+          logMessage("Exchange already finalized, please refresh to start over.", "warning");
+          return;
+        }
+        if (userBalance < 20) {
+          logMessage("You don't have enough MVT to request data (20 required).", "error");
+          return;
+        }
+        // User stakes 20 MVT
+        userBalance -= 20;
+        userStaked += 20;
+        updateBalances();
+
+        logMessage("You staked 20 MVT to request private data from the domain.");
+
+        // Domain decides randomly whether to ask symmetrical proof
+        setTimeout(() => {
+          let randomDecision = Math.random() < 0.5;
+          if (randomDecision) {
+            symmetricalRequest = true;
+            logMessage("Domain requests symmetrical proof from you. Domain stakes 20 MVT as well.", "info");
+            // Domain stakes
+            domainBalance -= 20;
+            domainStaked += 20;
+            updateBalances();
+            respondSymmetryBtn.disabled = false;
+          } else {
+            symmetricalRequest = false;
+            logMessage("Domain DOES NOT request symmetrical proof. They provide data freely.", "info");
+            finalizeBtn.disabled = false;
+          }
+        }, 1500);
+      });
+
+      // B) User responds with symmetrical proof
+      respondSymmetryBtn.addEventListener("click", () => {
+        if (!symmetricalRequest) {
+          logMessage("No symmetrical proof was requested!", "warning");
+          return;
+        }
+        logMessage("You agreed to provide symmetrical proof. Data exchange in progress...", "info");
+        finalizeBtn.disabled = false;
+      });
+
+      // C) Finalize exchange
+      finalizeBtn.addEventListener("click", () => {
+        if (exchangeComplete) {
+          logMessage("Exchange already finalized, please refresh to start over.", "warning");
+          return;
+        }
+        exchangeComplete = true;
+
+        if (symmetricalRequest) {
+          // Both staked 20 MVT
+          // Both provided data => both get staked tokens back
+          if (!respondSymmetryBtn.disabled) {
+            // Means user DID provide symmetrical proof
+            userBalance += userStaked;
+            domainBalance += domainStaked;
+            logMessage("Mutual verification complete! Both parties retrieve their staked MVT.", "success");
+          } else {
+            // Means user refused symmetrical proof
+            domainBalance += domainStaked + userStaked; // domain gets all
+            logMessage("You refused symmetrical proof—Domain takes your stake!", "error");
+          }
+        } else {
+          // Domain didn’t request symmetrical proof => user gets data
+          // Domain didn’t stake => user’s stake is returned
+          userBalance += userStaked;
+          logMessage("No symmetrical proof requested—User recovers stake, data received successfully!", "success");
+        }
+
+        userStaked = 0;
+        domainStaked = 0;
+        finalizeBtn.disabled = true;
+        respondSymmetryBtn.disabled = true;
+        requestDataBtn.disabled = true;
+        updateBalances();
+      });
+
+      // Initialize
+      updateBalances();
+    </script>
+  </body>
+</html>
